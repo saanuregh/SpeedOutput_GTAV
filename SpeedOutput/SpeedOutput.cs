@@ -1,20 +1,19 @@
-﻿using System;
+﻿using GTA;
+using System;
 using System.Text;
 using System.Windows.Forms;
-using GTA;
 using WatsonTcp;
-
 
 namespace SpeedOutput
 {
     public class Main : Script
     {
-        bool active = false;
-        bool listening = false;
-        bool firstTime = true;
-        string ModName = "SpeedOutput";
-        WatsonTcpClient client = null;
-        int port = 4915;
+        private bool active = false;
+        private bool listening = false;
+        private bool firstTime = true;
+        private string ModName = "SpeedOutput";
+        private WatsonTcpClient client = null;
+        private int port = 4915;
 
         public Main()
         {
@@ -72,13 +71,13 @@ namespace SpeedOutput
             }
         }
 
-        static bool ServerConnected()
+        private static bool ServerConnected()
         {
             UI.Notify("Server connected");
             return true;
         }
 
-        static bool ServerDisconnected()
+        private static bool ServerDisconnected()
         {
             UI.Notify("Server disconnected");
             return true;
