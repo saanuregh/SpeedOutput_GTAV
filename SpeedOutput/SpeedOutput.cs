@@ -1,25 +1,37 @@
 ﻿using GTA;
 using System;
+using System.Net.Sockets;
 using System.Text;
 using System.Windows.Forms;
-using WatsonTcp;
 
 namespace SpeedOutput
 {
     public class Main : Script
     {
         private bool active = false;
-        private bool listening = false;
         private bool firstTime = true;
         private string ModName = "SpeedOutput";
-        private WatsonTcpClient client = null;
+        private UdpClient udpClient;
         private int port = 4915;
+        private bool disposedValue = false;
 
         public Main()
         {
             Tick += onTick;
             KeyDown += onKeyDown;
             Interval = 1;
+            try
+            {
+                if (this.udpClient == null)
+                {
+                    this.udpClient = new UdpClient();
+                    this.udpClient.Connect("127.0.0.1", port);
+                }
+            }
+            catch
+            {
+                this.udpClient = null;
+            }
         }
 
         private void onTick(object sender, EventArgs e)
@@ -30,26 +42,14 @@ namespace SpeedOutput
                 firstTime = false;
             }
 
-            Player player = Game.Player;
-            if (player != null && player.CanControlCharacter && player.IsAlive && player.Character != null)
-            {
-                if (player.Character.IsInVehicle())
-                {
-                    string speedString = player.Character.CurrentVehicle.Speed.ToString("0000.0000");
+            Ped player = Game.Player.Character;
 
-                    if (active)
-                    {
-                        if (!listening)
-                        {
-                            this.client = new WatsonTcpClient("127.0.0.1", port);
-                            this.client.ServerConnected = ServerConnected;
-                            this.client.ServerDisconnected = ServerDisconnected;
-                            this.client.Debug = false;
-                            this.client.Start();
-                            this.listening = true;
-                        }
-                        this.client.Send(Encoding.UTF8.GetBytes(speedString + '\0'));
-                    }
+            if (player.IsInVehicle())
+            {
+                if (active)
+                {
+                    Byte[] sendBytes = Encoding.UTF8.GetBytes(player.CurrentVehicle.Speed.ToString("000.000"));
+                    this.udpClient.SendAsync(sendBytes,sendBytes.Length);
                 }
             }
         }
@@ -60,27 +60,27 @@ namespace SpeedOutput
             {
                 if (!active)
                 {
-                    UI.Notify("SpeedOutput Activated");
+                    UI.Notify("SpeedOutput: Activated");
                     this.active = !active;
                 }
                 else
                 {
-                    UI.Notify("SpeedOutput Deactivated");
+                    UI.Notify("SpeedOutput: Deactivated");
                     this.active = !active;
                 }
             }
         }
 
-        private static bool ServerConnected()
+        protected override void Dispose(bool A_0)
         {
-            UI.Notify("Server connected");
-            return true;
-        }
-
-        private static bool ServerDisconnected()
-        {
-            UI.Notify("Server disconnected");
-            return true;
+            if (!disposedValue)
+            {
+                if (A_0)
+                {
+                    udpClient.Close();
+                }
+                disposedValue = true;
+            }
         }
     }
 }
